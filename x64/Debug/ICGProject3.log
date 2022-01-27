@@ -1,0 +1,37 @@
+﻿Build started 1/27/2022 11:34:32 AM.
+Logging verbosity is set to: Normal.     1>Project "C:\Users\desit\source\repos\CS4533\ICGProject3\ICGProject3.vcxproj" on node 2 (Build target(s)).
+     1>InitializeBuildStatus:
+         Creating "x64\Debug\ICGProject3.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\HostX86\x64\CL.exe /c /ZI /JMC /nologo /W3 /WX- /diagnostics:column /sdl- /Od /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"x64\Debug\\" /Fd"x64\Debug\vc142.pdb" /external:W3 /Gd /TP /FC /errorReport:prompt Assignment3.cpp
+         Assignment3.cpp
+     1>C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(35,27): warning C4305: 'initializing': truncation from 'double' to 'float'
+     1>C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(54,52): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+     1>C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(55,48): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+     1>C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(170,46): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+     1>C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(216,41): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
+     1>C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(131,9): warning C4101: 'numTri': unreferenced local variable
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\HostX86\x64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\desit\source\repos\CS4533\ICGProject3\x64\Debug\ICGProject3.exe" /INCREMENTAL /ILK:"x64\Debug\ICGProject3.ilk" /NOLOGO freeglut.lib opengl32.lib glu32.lib glew32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\desit\source\repos\CS4533\ICGProject3\x64\Debug\ICGProject3.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\desit\source\repos\CS4533\ICGProject3\x64\Debug\ICGProject3.lib" /MACHINE:X64 x64\Debug\Assignment3.obj
+         x64\Debug\InitShader.obj
+         ICGProject3.vcxproj -> C:\Users\desit\source\repos\CS4533\ICGProject3\x64\Debug\ICGProject3.exe
+       FinalizeBuildStatus:
+         Deleting file "x64\Debug\ICGProject3.tlog\unsuccessfulbuild".
+         Touching "x64\Debug\ICGProject3.tlog\ICGProject3.lastbuildstate".
+     1>Done Building Project "C:\Users\desit\source\repos\CS4533\ICGProject3\ICGProject3.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+       "C:\Users\desit\source\repos\CS4533\ICGProject3\ICGProject3.vcxproj" (Build target) (1) ->
+       (ClCompile target) -> 
+         C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(35,27): warning C4305: 'initializing': truncation from 'double' to 'float'
+         C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(54,52): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+         C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(55,48): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+         C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(170,46): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+         C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(216,41): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
+         C:\Users\desit\source\repos\CS4533\ICGProject3\Assignment3.cpp(131,9): warning C4101: 'numTri': unreferenced local variable
+
+    6 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.06
