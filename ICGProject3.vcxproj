@@ -157,6 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="fshader42.glsl" />
+    <None Include="sphere.1024" />
     <None Include="sphere.128" />
     <None Include="sphere.256" />
     <None Include="vshader42.glsl" />

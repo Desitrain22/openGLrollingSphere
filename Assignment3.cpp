@@ -41,31 +41,56 @@ vec3* startPoint = &a;
 vec3 b = vec3(-2.0f, 1.0f, -2.5f);
 vec3 c = vec3(2.0f, 1.0f, -4.0f);
 vec3 rollingVec = vec3(b - a); //the vector direction in which we are moving
-vec3 rollingPoint = normalize(cross(vec3(0.0f, 1.0f, 0.0f), rollingVec)); //the axis on which we're rotating
+vec3 rollingPoint = normalize(cross(rollingVec, vec3(0.0f, 1.0f, 0.0f))); //the axis on which we're rotating
 
 //Assignment3
+bool programSelect = false;
 vec4 light1 = vec4(-14.0f, 12.0f, -3.0f, 1.0f);
-
+vec4 light1Color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 vec4 ambientWhite = vec4(1.0f, 1.0f, 1.0f, 1.0f); //ambient white
 vec4 ambientBlack = vec4(0.0f, 0.0f, 0.0f, 1.0f); //directional light black ambient color
-float k = 125.0f; //ambient light coefficient
 
+//part c global and directional
+vec4 getProduct(vec4 surface, vec4 light)
+{
+    return light*surface;
+}
+int smoothOrFlat = 0;
+int spotOrPoint = 0;
+
+vec4 globalAmbientWhite = ambientWhite;
+
+vec4 globalDirectional = vec4(0.1, 0.0, -1.0, 0.0); //vector, distanct directional light
+vec4 globalDirectionalAmbient = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 vec4 globalDiffuseColor = vec4(0.8f, 0.8f, 0.8f, 1.0f); //diffusion color
 vec4 globalSpecularColor = vec4(0.2, 0.2, 0.2, 1.0f); //specular light color
-vec4 globalDirection = vec4(0.1, 0.0, -1.0, 0.0); //vector, distanct directional light
+float k = 125.0f; //ambient light coefficient, shininess coeff
 
+vec4 justLight = vec4(globalAmbientWhite + globalDirectionalAmbient);
+vec4 globalAtts[3] = { globalDiffuseColor, justLight, globalSpecularColor };
+
+vec4 groundDiffuse = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+vec4 groundAmbient = vec4(0.2, 0.2, 0.2, 1.0f);
+vec4 groundSpecular = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+vec4 groundAtts[3] = { groundDiffuse, groundAmbient, groundSpecular };
+
+vec4 sphereDiffuse = vec4(1.0, 0.84f, 0.0, 1.0);
+vec4 sphereAmbient = vec4(0.2, 0.2, 0.2, 1.0f);
+vec4 sphereSpecular = vec4(0.2, 0.2, 0.2, 1.0f);
+vec4 sphereAtts[3] = { sphereDiffuse, sphereAmbient, sphereSpecular };
+
+bool sphereOrGround = true; //true if sphere, false if ground
+
+//part d spot/dir
+vec4 spotLightDirection = vec4(-6.0f, 0.0f, -4.5f, 1.0f); // - light1;
 vec4 positionalDiffuse = ambientWhite;
-//lamerts law
 vec4 positionalSpecular = ambientWhite;
-
 vec4 positionalAmbient = ambientBlack;
 
-vec4 spotLightDirection = vec4(-6.0f, 0.0f, -4.5f, 1.0f) - light1;
 float attenuation[3] = { 2.0f, 0.01f, 0.001f };
-float spotLightAngle = 20.0f;
+float spotLightAngle = (20.0f/180.0f) * PI;
 float spotExponent = 15.0f;
-bool spotOrPoint = true; //true for spot, false for point
-bool lightOn = false;
+int lightOn = 0;
 
 
 int totalShadows = 0;
@@ -77,8 +102,9 @@ bool sphereShadow = false;
 const int floor_NumVertices = 6; //(1 face)*(2 triangles/face)*(3 vertices/triangle)
 point3 floor_points[floor_NumVertices]; // positions for all vertices
 color3 floor_colors[floor_NumVertices]; // colors for all vertices
-
+vec3 floorNormals[6];
 void updateShadows();
+
 
 point3 axis[9] = { point3(0.0,0.0,0.0), point3(10.0, 0.0, 0.0), point3(20.0, 0.0, 0.0),
     point3(0.0,0.0,0.0), point3(0.0,10.0, 0.0), point3(0.0, 20.0, 0.0),
@@ -102,21 +128,21 @@ color3 colors[9] = { color3(1.0, 0.0, 0.0),color3(1.0, 0.0, 0.0),  color3(1.0, 0
 void floor()
 {
 
-    floor_colors[0] = color3(0.0, 1.0, 0.0); floor_points[0] = point3(5.0, 0.0, 8.0);
-    floor_colors[1] = color3(0.0, 1.0, 0.0); floor_points[1] = point3(5.0, 0.0, -4.0);
-    floor_colors[2] = color3(0.0, 1.0, 0.0); floor_points[2] = point3(-5.0, 0.0, -4.0);
+    floor_colors[0] = color3(0.0, 1.0, 0.0); floor_points[0] = point3(5.0, 0.0, 8.0); floorNormals[0] = (0.0f, 120.0f, 0.0f);
+    floor_colors[1] = color3(0.0, 1.0, 0.0); floor_points[1] = point3(5.0, 0.0, -4.0); floorNormals[1] = (0.0f, 120.0f, 0.0f);
+    floor_colors[2] = color3(0.0, 1.0, 0.0); floor_points[2] = point3(-5.0, 0.0, -4.0); floorNormals[2] = (0.0f, 120.0f, 0.0f);
 
-    floor_colors[3] = color3(0.0, 1.0, 0.0);  floor_points[3] = point3(5.0, 0.0, 8.0);
-    floor_colors[4] = color3(0.0, 1.0, 0.0);  floor_points[4] = point3(-5.0, 0, -4.0);
-    floor_colors[5] = color3(0.0, 1.0, 0.0);  floor_points[5] = point3(-5.0, 0, 8.0);
+    floor_colors[3] = color3(0.0, 1.0, 0.0);  floor_points[3] = point3(5.0, 0.0, 8.0); floorNormals[3] = (0.0f, 120.0f, 0.0f);
+    floor_colors[4] = color3(0.0, 1.0, 0.0);  floor_points[4] = point3(-5.0, 0, -4.0); floorNormals[4] = (0.0f, 120.0f, 0.0f);
+    floor_colors[5] = color3(0.0, 1.0, 0.0);  floor_points[5] = point3(-5.0, 0, 8.0); floorNormals[5] = (0.0f, 120.0f, 0.0f);
 }
 
 
-point3 sphere_points[1024];
-color3 sphere_color[1024];
-vec4 shadow_points[1024];
-vec4 shadow_color[1024];
-vec3 normal[1024];
+point3 sphere_points[1024*3];
+color3 sphere_color[1024*3];
+vec3 shadow_points[1024*3];
+vec4 shadow_color[1024*3];
+vec3 normal[1024*3];
 
 int numberOfTriangles;
 void init() {
@@ -134,7 +160,7 @@ void init() {
     myFile >>  numberOfTriangles;
 
     vector<vec3*> coordinates;
-    vector<vec3*> normals;
+    vector<vec3> normals;
     vec3* pointer1;
     vec3* pointer2;
     vec3* pointer3;
@@ -156,10 +182,11 @@ void init() {
         pointer3 = new vec3(x, y, z);
         coordinates.push_back(pointer3);
         
-        normalPointer = normalize(cross(vec3(pointer3->x - pointer2->x, pointer3->y - pointer2->y, pointer3->z - pointer2->z), vec3(pointer1->x - pointer2->x, pointer1->y - pointer2->y, pointer1->z - pointer2->z)));        
-        normals.push_back(&normalPointer);
-        normals.push_back(&normalPointer);
-        normals.push_back(&normalPointer);
+        normalPointer = cross(*pointer2 - *pointer1, *pointer3 - *pointer1);
+        normalPointer = normalize(normalPointer);
+        normals.push_back(normalPointer);
+        normals.push_back(normalPointer);
+        normals.push_back(normalPointer);
     }
     myFile.close();
 
@@ -167,37 +194,53 @@ void init() {
     {
         sphere_points[i] = *(coordinates[i]);
         sphere_color[i] = color3(1.0, 0.84, 0);
-        shadow_points[i] = vec4(coordinates[i]->x, coordinates[i]->y, coordinates[i]->z, 1.0f);
+        shadow_points[i] = vec3(coordinates[i]->x, coordinates[i]->y, coordinates[i]->z);
         shadow_color[i] = shadowColor;
-        normal[1] = *(normals[i]);
+        normal[i] = (normals[i]);
     }
 
     glGenBuffers(1, &sphere_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, sphere_buffer);
 
     updateShadows();
-
+    /*
     glBufferData(GL_ARRAY_BUFFER, sizeof(point3) * numberOfTriangles * 3 + sizeof(color3) * numberOfTriangles * 3, NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(point3) * numberOfTriangles * 3, sphere_points);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(point3) * numberOfTriangles * 3, sizeof(color3) * numberOfTriangles * 3, sphere_color);
+    */
+    glBufferData(GL_ARRAY_BUFFER, sizeof(point3) * numberOfTriangles * 3 + sizeof(vec3) * numberOfTriangles * 3 + 
+        sizeof(vec3)*numberOfTriangles*3, NULL, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(point3) * numberOfTriangles * 3, sphere_points);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(point3) * numberOfTriangles * 3, 
+        (sizeof(point3) * numberOfTriangles * 3) * 2, sphere_color);
+    glBufferSubData(GL_ARRAY_BUFFER, 2*(sizeof(point3) * numberOfTriangles * 3), 3*(sizeof(point3)*numberOfTriangles*3), normal);
 
+    
     glGenBuffers(1, &shadow_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, shadow_buffer);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(point3) * numberOfTriangles * 3 + sizeof(color3) * numberOfTriangles * 3, NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(point3) * numberOfTriangles * 3, sphere_points);
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(point3) * numberOfTriangles * 3, sizeof(color3) * numberOfTriangles * 3, shadow_color);
-
+    glBufferData(GL_ARRAY_BUFFER, (sizeof(point3) * numberOfTriangles * 3)*2, NULL, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(point3) * numberOfTriangles * 3, shadow_points);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(vec3) * numberOfTriangles * 3, 2 * (sizeof(vec3) * numberOfTriangles * 3), shadow_color);
+    //glBufferSubData(GL_ARRAY_BUFFER, sizeof(point3) * numberOfTriangles *3, sizeof(vec3) * numberOfTriangles * 3, normal)
     
     
     floor();
+    /*
     glGenBuffers(1, &floor_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, floor_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(floor_points) + sizeof(floor_colors), NULL, GL_STATIC_DRAW);
-
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(floor_points), floor_points);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(floor_points), sizeof(floor_colors),
         floor_colors);
+    */
+    glGenBuffers(1, &floor_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, floor_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(floor_points) + sizeof(floor_colors)+sizeof(floorNormals), NULL, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(floor_points), floor_points);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(floor_points), 2*(sizeof(floor_colors)), floor_colors);
+    glBufferSubData(GL_ARRAY_BUFFER, 2*(sizeof(floorNormals)), 3*(sizeof(floorNormals)), floorNormals);
+
 
     glGenBuffers(1, &axis_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
@@ -209,7 +252,7 @@ void init() {
     // Load shaders and create a shader program (to be used in display())
     //program = InitShader("vshader42.glsl", "fshader42.glsl");
     program[0] = InitShader("vshader42.glsl", "fshader42.glsl");
-    //program[1] = InitShader("vshader43.glsl", "fshader42.glsl");
+    program[1] = InitShader("vshaderNP.glsl", "fshader42.glsl");
 
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.529, 0.807, 0.92, 0.0);
@@ -217,63 +260,126 @@ void init() {
 
 }
 
-void drawObj(GLuint buffer, int num_vertices)
+bool drawingShadow = 0;
+
+void drawObj(GLuint buffer, int num_vertices, mat4 &mv)
 {
     //--- Activate the vertex buffer object to be drawn ---//
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
 
     /*----- Set up vertex attribute arrays for each vertex attribute -----*/
-    GLuint vPosition = glGetAttribLocation(program[0], "vPosition");
+    GLuint vPosition = glGetAttribLocation(program[programSelect], "vPosition");
+    if (drawingShadow)
+    {
+        vPosition = glGetAttribLocation(program[0], "vPosition");
+    }
     glEnableVertexAttribArray(vPosition);
-    glVertexAttribPointer(vPosition, 3, GL_FLOAT, GL_FALSE, 0,
-        BUFFER_OFFSET(0));
+    glVertexAttribPointer(vPosition, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
 
-    GLuint vColor = glGetAttribLocation(program[0], "vColor");
-    glEnableVertexAttribArray(vColor);
-    glVertexAttribPointer(vColor, 3, GL_FLOAT, GL_FALSE, 0,
-        BUFFER_OFFSET(sizeof(point3) * num_vertices));
-    // the offset is the (total) size of the previous vertex attribute array(s)
+    if (drawingShadow || (programSelect == 0))
+    {
+        
+        GLuint vColor = glGetAttribLocation(program[0], "vColor");
 
-  /* Draw a sequence of geometric objs (triangles) from the vertex buffer
-     (using the attributes specified in each enabled vertex attribute array) */
-    glDrawArrays(GL_TRIANGLES, 0, num_vertices);
+        glEnableVertexAttribArray(vColor);
+        glVertexAttribPointer(vColor, 3, GL_FLOAT, GL_FALSE, 0,
+            BUFFER_OFFSET(sizeof(point3) * num_vertices));
+        glDrawArrays(GL_TRIANGLES, 0, num_vertices);
+        glDisableVertexAttribArray(vColor);
 
-    /*--- Disable each vertex attribute array being enabled ---*/
+    }
+    else
+    {
+        
+
+        vec4 ambientProducts;
+        vec4 diffuseProducts;
+        vec4 specularProducts;
+        if (sphereOrGround)
+        {
+            diffuseProducts = getProduct(sphereAtts[0], globalAtts[0]);
+            ambientProducts = getProduct(sphereAtts[1], globalAtts[1]);
+            specularProducts = getProduct(sphereAtts[2], globalAtts[2]);
+            k = 125.0f;
+        }
+        else
+        {
+            diffuseProducts = getProduct(groundAtts[0], globalAtts[0]);
+            ambientProducts = getProduct(groundAtts[1],globalAtts[1]);
+            specularProducts = getProduct(groundAtts[2], globalAtts[2]);
+            k = 1.0;
+        }
+
+        glUniform4fv(glGetUniformLocation(program[1], "ambientProduct"),
+            1, ambientProducts) ;
+        glUniform4fv(glGetUniformLocation(program[1], "specularProduct"),
+            1, specularProducts);\
+        glUniform4fv(glGetUniformLocation(program[1], "diffuseProduct"),
+            1, diffuseProducts);
+        glUniform4fv(glGetUniformLocation(program[1], "distantLightVector"), 1, globalDirectional);
+        glUniform1i(glGetUniformLocation(program[1], "smoothOrFlat"), smoothOrFlat);
+        glUniform1i(glGetUniformLocation(program[1], "spotOrPoint"), spotOrPoint);
+        glUniform1f(glGetUniformLocation(program[1], "shiny"), k);
+
+        mat3 normalMatrix = NormalMatrix(mv, 1);
+        
+        glUniformMatrix3fv(glGetUniformLocation(program[1], "normal"),1, GL_TRUE, normalMatrix);
+        GLuint vNormal = glGetAttribLocation(program[1], "vNormal");
+        glEnableVertexAttribArray(vNormal);
+        glVertexAttribPointer(vNormal, 3, GL_FLOAT, GL_FALSE, 0,
+            BUFFER_OFFSET(sizeof(point3) * num_vertices));
+        glDrawArrays(GL_TRIANGLES, 0, num_vertices);
+        glDisableVertexAttribArray(vNormal);
+
+    }
+
     glDisableVertexAttribArray(vPosition);
-    glDisableVertexAttribArray(vColor);
+    // the offset is the (total) size of the previous vertex attribute array(s)
 }
 //----------------------------------------------------------------------------
+
 void display(void)
 {
     GLuint  model_view;  // model-view matrix uniform shader variable location
     GLuint  projection;  // projection matrix uniform shader variable location
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(program[0]); // Use the shader program
-    model_view = glGetUniformLocation(program[0], "model_view");
-    projection = glGetUniformLocation(program[0], "projection");
+    glUseProgram(program[programSelect]); // Use the shader program
+    model_view = glGetUniformLocation(program[programSelect], "model_view");
+    projection = glGetUniformLocation(program[programSelect], "projection");
     mat4  p = Perspective(fovy, aspect, zNear, zFar);
     glUniformMatrix4fv(projection, 1, GL_TRUE, p); // GL_TRUE: matrix is row-major
     vec4    at(-7.0, -3.0, 10.0, 1.0);
     vec4    up(0.0, 1.0, 0.0, 0.0);
     mat4  mv = LookAt(eye, at, up);    
+    if (rolling)
+    {
+        totalRolled = (Rotate(rollingSpeed * float(180.0 / PI), rollingPoint.x, rollingPoint.y, rollingPoint.z)) * totalRolled;
+    }
 
     mv = mv * Translate(vec3(*startPoint + (normalize(rollingVec) * (rollingSpeed * translateTick))))
-        * (totalRolled * Rotate(rollingSpeed * float(180.0 / PI) * translateTick, rollingPoint.x, rollingPoint.y, rollingPoint.z));
+        * totalRolled;
 
     glUniformMatrix4fv(model_view, 1, GL_TRUE, mv); // GL_TRUE: matrix is row-major
     if (sphereFlag == 1) // Filled cube
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     else              // Wireframe cube
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    drawObj(sphere_buffer, numberOfTriangles * 3);  // draw the cube
-
+    sphereOrGround = true;
+    drawObj(sphere_buffer, numberOfTriangles * 3, mv);  // draw the cube
+    sphereOrGround = false;
+    
     if (sphereShadow && eye.y > 0)
-    {        
+    {
+        glUseProgram(program[0]); // Use the shader program
+        model_view = glGetUniformLocation(program[0], "model_view");
+        projection = glGetUniformLocation(program[0], "projection");
+        glUniformMatrix4fv(projection, 1, GL_TRUE, p); // GL_TRUE: matrix is row-major
+
         mat4  mv = LookAt(eye, at, up);
         if (rolling)
         {
             mv = mv * shadows * Translate(vec3(*startPoint + (normalize(rollingVec) * (rollingSpeed * translateTick))))
-                * (totalRolled * Rotate(rollingSpeed * float(180.0 / PI) * translateTick, rollingPoint.x, rollingPoint.y, rollingPoint.z));
+                *  totalRolled;
         }
         else
         {
@@ -286,20 +392,25 @@ void display(void)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glLineWidth(1.0);
         glDepthMask(GL_TRUE);
-        drawObj(shadow_buffer, numberOfTriangles * 3);  // draw the cube
+        drawingShadow = true;
+        //sphereOrGround = false;
+        drawObj(shadow_buffer, numberOfTriangles * 3, mv);  
+        drawingShadow = false;
+        glUseProgram(program[programSelect]); // Use the shader program
+        model_view = glGetUniformLocation(program[programSelect], "model_view");
+        projection = glGetUniformLocation(program[programSelect], "projection");
     }
     
-    mv = LookAt(eye, at, up) * Translate(0.3f, 0.0f, 0.0f) * Scale(1.6f, 1.5f, 3.3f);
+    mv = LookAt(eye, at, up) * Translate(0.3f, 0.0f, 0.0f)* Scale(1.6f, 1.5f, 3.3f);
     glUniformMatrix4fv(model_view, 1, GL_TRUE, mv); // GL_TRUE: matrix is row-major
     if (floorFlag == 1) // Filled floor
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     else              // Wireframe floor
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    drawObj(floor_buffer, floor_NumVertices);  // draw the floor
+    sphereOrGround = false;
+    drawObj(floor_buffer, floor_NumVertices, mv);  // draw the floor
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    drawObj(axis_buffer, 9);
-
-
+    drawObj(axis_buffer, 9, mv);
     glutSwapBuffers();
 }
 
@@ -314,7 +425,7 @@ void roll()
         rollingVec = vec3(b - a);
         if (rollingSpeed * translateTick >= 9.01388) //distance from a to b
         {
-            totalRolled = totalRolled * Rotate(float(rollingSpeed * float(180.0 / PI) * translateTick), rollingPoint.x, rollingPoint.y, rollingPoint.z);
+            //totalRolled = totalRolled * Rotate(float(rollingSpeed * float(180.0 / PI) * translateTick), rollingPoint.x, rollingPoint.y, rollingPoint.z);
             startPoint = &b;
             rollingVec = vec3(c - b);
             translateTick = 0.0f;
@@ -325,7 +436,7 @@ void roll()
         rollingVec = vec3(c - b);
         if (rollingSpeed * translateTick >= 4.272) //distance b to c
         {
-            totalRolled = totalRolled * Rotate(float(rollingSpeed * (180.0 / PI) * translateTick), rollingPoint.x, rollingPoint.y, rollingPoint.z);
+            //totalRolled = totalRolled * Rotate(float(rollingSpeed * (180.0 / PI) * translateTick), rollingPoint.x, rollingPoint.y, rollingPoint.z);
             startPoint = &c;
             rollingVec = vec3(a - c);
             translateTick = 0.0f;
@@ -336,14 +447,14 @@ void roll()
         rollingVec = vec3(a - c);
         if (rollingSpeed * translateTick >= 9.05539) //distance c to a
         {
-            totalRolled = totalRolled * Rotate(float(rollingSpeed * (180.0 / PI) * translateTick), rollingPoint.x, rollingPoint.y, rollingPoint.z);
+            //totalRolled = totalRolled * Rotate(float(rollingSpeed * (180.0 / PI) * translateTick), rollingPoint.x, rollingPoint.y, rollingPoint.z);
             startPoint = &a;
             rollingVec = vec3(b - a);
             translateTick = 0.0f;
         }
     }
 
-    rollingPoint = normalize(cross(vec3(0.0f, 1.0f, 0.0f), rollingVec));//we take the cross product with the y axis vector since that's orthogonal to the plane we roll on
+    rollingPoint = normalize(cross( vec3(0.0f, 1.0f, 0.0f), rollingVec));//we take the cross product with the y axis vector since that's orthogonal to the plane we roll on
     //cout << "axis: " << rollingPoint.x << ", " << rollingPoint.y << ", " << rollingPoint.z << endl;
     //cout << "vector " << rollingVec.x << ", " << rollingVec.y << ", " << rollingVec.z << endl;
 }
@@ -427,10 +538,12 @@ void lightMenu(int id)
     {
     case 1:
         lightOn = false;
+        programSelect = 0;
         cout << "Light off" << endl;
         break;
     case 2:
         lightOn = true;
+        programSelect = 1;
         cout << "Light on" << endl;
         break;
     }
@@ -441,11 +554,11 @@ void shadingMenu(int id)
     switch (id)
     {
     case 1:
-        sphereShadow = false;
+        smoothOrFlat = 0;
         cout << "Flat Shading";
         break;
     case 2:
-        sphereShadow = true;
+        smoothOrFlat = 1;
         cout << "Smooth Shading";
         break;
     }

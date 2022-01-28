@@ -49,5 +49,8 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="vshaderNP.glsl" />
+    <None Include="sphere.1024">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
