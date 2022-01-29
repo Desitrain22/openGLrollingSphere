@@ -21,14 +21,17 @@ uniform mat4 model_view;
 uniform mat4 projection;
 
 //c
-uniform int spotOrPoint;
 uniform int smoothOrFlat;
 uniform vec4 ambientProduct, diffuseProduct, specularProduct;
 uniform vec4 distantLightVector;
 
 //d
+uniform int spotOrPoint;
+uniform vec4 pointLight1;
 uniform vec4 pointLightVector;
-uniform vec4 pointAmbientProduct, pointDiffuseProduct, pointSpecularProduct;
+uniform vec4 pointAmbient, pointDiffuse, pointSpecular;
+uniform float angle, exp;
+uniform float atten1, atten2, atten3;
 
 uniform float shiny;
 
@@ -36,11 +39,11 @@ void main()
 {
     vec4 vPosition4 = vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);
     vec4 vColor4 = vec4(vNormal.r, vNormal.g, vNormal.b, 1.0); 
-   
+    float attenuation = 1.0f;
     // YJC: Original, incorrect below:
     //      gl_Position = projection * model_view * vPosition/vPosition.w;
 
-    gl_Position = projection * model_view * vPosition4;
+    //gl_Position = projection * model_view * vPosition4;
 
     vec3 position = (model_view * vPosition4).xyz;
 
@@ -79,33 +82,46 @@ void main()
     }
     color = (ambient+diffuse+specular);
 
-    
-    /*
-    float dis = length(position - pointLightVector.xyz);
-    float attenuation = 1.0/(atten[0]+ (atten[1]*dis) + (atten[2]*dis*dis));
+    //part d: repeat this process with the point source vectors, and ADD it to color
 
-    L = normalize(positionalposition.xyz - pos);
-    if(point_light == 1){
-        vec3 Lf = normalize(positionaldirection.xyz);
+    vec3 Lf;    
+    //change light vector to be relative from position to light source
+    l = normalize(pointLight1.xyz - position);
 
-        if(dot(-L,Lf)>cos(positionalAng)){ attenuation *= pow(dot(-L,Lf),positionalExp); }
-        else{ attenuation = 0; }
+    if(spotOrPoint==1) //if its a spotlight, we need to factor in the directional vector from the point
+    {
+        Lf = normalize(pointLightVector.xyz);
+    }
+    h = normalize(l+e);
+
+    float dis = length(position - pointLight1.xyz); //distance from light to our point we're shading
+    attenuation = (1.0f)/(atten1 + atten2*dis + atten3*dis*dis); //factoring attenuation sum as a coefficient (lecture 9-10)
+
+    if(spotOrPoint==1) //if spotlight, we have to check to see if its in the angle, and scale the intensity (coefficient to attenuation)
+    {
+        if(dot(-l,Lf) > cos(angle)) // lecture 9-10 diagram
+        {
+			attenuation = attenuation * pow(dot(-l,Lf),exp);
+		}
+		else
+        { //out of range of the light, set coefficient to 0
+			attenuation = 0;
+		}
     }
 
-    ambient = positionalambientproduct;
-
-    d = max(dot(L, N), 0.0);
-    diffuse = d * positionaldiffuseproduct;
-
-    H = normalize(L + E);
-    s = pow( max( dot(N, H), 0.0), Shininess);
-    specular = s * positionalspecularproduct;
-    if(dot(L,N)<0.0){specular = vec4(0,0,0,1);}
+    ambient = attenuation * pointAmbient;
+    
+    dCoeff = max( dot(l, newNormal), 0.0 );
+    diffuse = attenuation * dCoeff * pointDiffuse;
+    
+    sCoeff = pow(max(dot(newNormal,h),0.0), shiny);
+    specular = attenuation * (sCoeff*(pointSpecular));
+    if (dot(l,newNormal) < 0.0)
+    {
+        specular = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
 
     color += attenuation * (ambient + diffuse + specular);
-
-
-    gl_Position = projection * model_view * vPosition;
-    */
+    gl_Position = projection * model_view * vPosition4; 
 }
 

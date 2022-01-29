@@ -86,6 +86,7 @@ vec4 spotLightDirection = vec4(-6.0f, 0.0f, -4.5f, 1.0f); // - light1;
 vec4 positionalDiffuse = ambientWhite;
 vec4 positionalSpecular = ambientWhite;
 vec4 positionalAmbient = ambientBlack;
+vec4 positionAtts[3] = { positionalDiffuse, positionalAmbient, positionalSpecular };
 
 float attenuation[3] = { 2.0f, 0.01f, 0.001f };
 float spotLightAngle = (20.0f/180.0f) * PI;
@@ -95,7 +96,7 @@ int lightOn = 0;
 
 int totalShadows = 0;
 mat4 shadows = mat4();
-vec4 shadowColor  = vec4(0.25f, 0.25f, 0.25f, 0.65f);
+vec3 shadowColor  = vec3(0.25f, 0.25f, 0.25f);
 vec4 yPlane = vec4(0.0f, 1.0f, 0.0f, 0.0f); //where the shadows are cast on
 bool sphereShadow = false;
 
@@ -141,7 +142,7 @@ void floor()
 point3 sphere_points[1024*3];
 color3 sphere_color[1024*3];
 vec3 shadow_points[1024*3];
-vec4 shadow_color[1024*3];
+vec3 shadow_color[1024*3];
 vec3 normal[1024*3];
 
 int numberOfTriangles;
@@ -182,7 +183,7 @@ void init() {
         pointer3 = new vec3(x, y, z);
         coordinates.push_back(pointer3);
         
-        normalPointer = cross(*pointer2 - *pointer1, *pointer3 - *pointer1);
+        normalPointer = cross(*pointer3 - *pointer1, *pointer2 - *pointer1);
         normalPointer = normalize(normalPointer);
         normals.push_back(normalPointer);
         normals.push_back(normalPointer);
@@ -195,7 +196,7 @@ void init() {
         sphere_points[i] = *(coordinates[i]);
         sphere_color[i] = color3(1.0, 0.84, 0);
         shadow_points[i] = vec3(coordinates[i]->x, coordinates[i]->y, coordinates[i]->z);
-        shadow_color[i] = shadowColor;
+        shadow_color[i] = color3(0.25f, 0.25f, 0.25f);
         normal[i] = (normals[i]);
     }
 
@@ -295,12 +296,18 @@ void drawObj(GLuint buffer, int num_vertices, mat4 &mv)
         vec4 ambientProducts;
         vec4 diffuseProducts;
         vec4 specularProducts;
+        vec4 pointDiffuse, pointSpecular, pointAmbient;
         if (sphereOrGround)
         {
             diffuseProducts = getProduct(sphereAtts[0], globalAtts[0]);
             ambientProducts = getProduct(sphereAtts[1], globalAtts[1]);
             specularProducts = getProduct(sphereAtts[2], globalAtts[2]);
             k = 125.0f;
+
+            pointDiffuse = getProduct(sphereAtts[0], positionAtts[0]);
+            pointAmbient = getProduct(sphereAtts[1], positionAtts[1]);
+            specularProducts = getProduct(sphereAtts[2], positionAtts[2]);
+            glLineWidth(2.0);
         }
         else
         {
@@ -308,18 +315,34 @@ void drawObj(GLuint buffer, int num_vertices, mat4 &mv)
             ambientProducts = getProduct(groundAtts[1],globalAtts[1]);
             specularProducts = getProduct(groundAtts[2], globalAtts[2]);
             k = 1.0;
+            pointDiffuse = getProduct(groundAtts[0], positionAtts[0]);
+            pointAmbient = getProduct(groundAtts[1], positionAtts[1]);
+            specularProducts = getProduct(groundAtts[2], positionAtts[2]);
+            glLineWidth(1.0);
         }
 
-        glUniform4fv(glGetUniformLocation(program[1], "ambientProduct"),
-            1, ambientProducts) ;
-        glUniform4fv(glGetUniformLocation(program[1], "specularProduct"),
-            1, specularProducts);\
-        glUniform4fv(glGetUniformLocation(program[1], "diffuseProduct"),
-            1, diffuseProducts);
+        glUniform4fv(glGetUniformLocation(program[1], "ambientProduct"),  1, ambientProducts) ;
+        glUniform4fv(glGetUniformLocation(program[1], "specularProduct"), 1, specularProducts);
+        glUniform4fv(glGetUniformLocation(program[1], "diffuseProduct"), 1, diffuseProducts);
         glUniform4fv(glGetUniformLocation(program[1], "distantLightVector"), 1, globalDirectional);
         glUniform1i(glGetUniformLocation(program[1], "smoothOrFlat"), smoothOrFlat);
-        glUniform1i(glGetUniformLocation(program[1], "spotOrPoint"), spotOrPoint);
         glUniform1f(glGetUniformLocation(program[1], "shiny"), k);
+
+        glUniform1i(glGetUniformLocation(program[1], "spotOrPoint"), spotOrPoint);
+
+        mat4 normal4Matrix = mat4WithUpperLeftMat3(NormalMatrix(mv, 1)); //Help from: Abraham Hung
+        glUniform4fv(glGetUniformLocation(program[1], "pointLightVector"), 1,normal4Matrix*(spotLightDirection-light1));
+        
+        glUniform4fv(glGetUniformLocation(program[1], "pointLight1"), 1, mv * (light1));
+        glUniform4fv(glGetUniformLocation(program[1], "pointAmbient"),1, pointAmbient);
+        glUniform4fv(glGetUniformLocation(program[1], "pointDiffuse"), 1, pointDiffuse);
+        glUniform4fv(glGetUniformLocation(program[1], "pointSpecular"), 1, pointSpecular);
+        glUniform1f(glGetUniformLocation(program[1], "atten"), attenuation[0]);
+        glUniform1f(glGetUniformLocation(program[1], "atten2"), attenuation[1]);
+        glUniform1f(glGetUniformLocation(program[1], "atten3"), attenuation[2]);
+        glUniform1f(glGetUniformLocation(program[1], "angle"), spotLightAngle);
+        glUniform1f(glGetUniformLocation(program[1], "exp"), spotExponent);
+
 
         mat3 normalMatrix = NormalMatrix(mv, 1);
         
@@ -374,7 +397,6 @@ void display(void)
         model_view = glGetUniformLocation(program[0], "model_view");
         projection = glGetUniformLocation(program[0], "projection");
         glUniformMatrix4fv(projection, 1, GL_TRUE, p); // GL_TRUE: matrix is row-major
-
         mat4  mv = LookAt(eye, at, up);
         if (rolling)
         {
@@ -569,12 +591,12 @@ void sourceMenu(int id)
     switch (id)
     {
     case 1:
-        spotOrPoint = true;
+        spotOrPoint = 1;
         cout << "Spot Light" << endl;
         break;
 
     case 2:
-        spotOrPoint = false;
+        spotOrPoint = 0;
         cout << "Point Source Light" << endl;
         break;
     }
