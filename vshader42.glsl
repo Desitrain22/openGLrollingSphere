@@ -12,8 +12,8 @@
 #version 150  // YJC: Comment/un-comment this line to resolve compilation errors
               //      due to different settings of the default GLSL version
 
-in  vec3 vPosition;
-in  vec3 vColor;
+in  vec4 vPosition;
+in  vec4 vColor;
 out vec4 color;
 
 uniform mat4 model_view;
