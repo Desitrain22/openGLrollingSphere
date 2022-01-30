@@ -115,6 +115,75 @@ int fogType = 1;
 color4 fogColor = color4(0.7, 0.7, 0.7, 0.5);
 //4b
 bool blend = false;
+//4c
+int groundTexture = 0;
+vec2 textCoords[6] = { vec2(5.0f, 8.0f), vec2(5.0f, 2.0f), vec2(0.0, 2.0), vec2(0.0, 2.0), vec2(5.0f, 8.0f), vec2(0.0f, 8.0f) };
+static GLuint textureSet1;
+static GLuint textureSet2;
+
+#define ImageWidth  64
+#define ImageHeight 64
+GLubyte Image[ImageHeight][ImageWidth][4];
+#define	stripeImageWidth 32
+GLubyte stripeImage[4 * stripeImageWidth];
+/*************************************************************
+void image_set_up(void):
+  generate checkerboard and stripe images.
+
+* Inside init(), call this function and set up texture objects
+  for texture mapping.
+  (init() is called from main() before calling glutMainLoop().)
+***************************************************************/
+void image_set_up(void)
+{
+    int i, j, c;
+
+    /* --- Generate checkerboard image to the image array ---*/
+    for (i = 0; i < ImageHeight; i++)
+        for (j = 0; j < ImageWidth; j++)
+        {
+            c = (((i & 0x8) == 0) ^ ((j & 0x8) == 0));
+
+            if (c == 1) /* white */
+            {
+                c = 255;
+                Image[i][j][0] = (GLubyte)c;
+                Image[i][j][1] = (GLubyte)c;
+                Image[i][j][2] = (GLubyte)c;
+            }
+            else  /* green */
+            {
+                Image[i][j][0] = (GLubyte)0;
+                Image[i][j][1] = (GLubyte)150;
+                Image[i][j][2] = (GLubyte)0;
+            }
+
+            Image[i][j][3] = (GLubyte)255;
+        }
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    /*--- Generate 1D stripe image to array stripeImage[] ---*/
+    for (j = 0; j < stripeImageWidth; j++) {
+        /* When j <= 4, the color is (255, 0, 0),   i.e., red stripe/line.
+           When j > 4,  the color is (255, 255, 0), i.e., yellow remaining texture
+         */
+        stripeImage[4 * j] = (GLubyte)255;
+        stripeImage[4 * j + 1] = (GLubyte)((j > 4) ? 255 : 0);
+        stripeImage[4 * j + 2] = (GLubyte)0;
+        stripeImage[4 * j + 3] = (GLubyte)255;
+    }
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    /*----------- End 1D stripe image ----------------*/
+
+    /*--- texture mapping set-up is to be done in
+          init() (set up texture objects),
+          display() (activate the texture object to be used, etc.)
+          and in shaders.
+     ---*/
+
+} /* end function */
 
 point4 axis[9] =
 { point4(0.0,0.0,0.0, 1.0f), point4(10.0, 0.0, 0.0, 1.0f), point4(20.0, 0.0, 0.0, 1.0f),
@@ -146,7 +215,39 @@ vec3 normal[1024 * 3];
 
 int numberOfTriangles;
 void init() {
-    //part a
+    //part 4c
+    image_set_up(); //taken from 'texmap.c' handout to generate textures
+    //following taken from checker-new.cpp handout
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    /*--- Create and Initialize a texture object ---*/
+    glGenTextures(1, &textureSet1);      // Generate texture obj name(s)
+
+    glActiveTexture(GL_TEXTURE0);  // Set the active texture unit to be 0 
+    glBindTexture(GL_TEXTURE_2D, textureSet1); // Bind the texture to this texture unit
+   
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ImageWidth, ImageHeight,
+        0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
+
+    glGenTextures(1, &textureSet2);      // Generate texture obj name(s)
+
+    glActiveTexture(GL_TEXTURE1);  // Set the active texture unit to be 1 
+
+    glBindTexture(GL_TEXTURE_1D, textureSet2); // Bind the texture to this texture unit
+
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, stripeImageWidth,
+        0, GL_RGBA, GL_UNSIGNED_BYTE, stripeImage);
+    //part 2a
     fstream myFile;
     string name;
     cout << "Enter a file name" << endl;
@@ -203,45 +304,29 @@ void init() {
 
     glGenBuffers(1, &sphere_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, sphere_buffer);
-
-    updateShadows();
-    /*
-    glBufferData(GL_ARRAY_BUFFER, sizeof(point3) * numberOfTriangles * 3 + sizeof(color3) * numberOfTriangles * 3, NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(point3) * numberOfTriangles * 3, sphere_points);
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(point3) * numberOfTriangles * 3, sizeof(color3) * numberOfTriangles * 3, sphere_color);
-    */
     glBufferData(GL_ARRAY_BUFFER, sizeof(point4) * numberOfTriangles * 3 + sizeof(point4) * numberOfTriangles * 3 +
         sizeof(vec3) * numberOfTriangles * 3, NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(point4) * numberOfTriangles * 3, sphere_points);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(point4) * numberOfTriangles * 3, (sizeof(point4) * numberOfTriangles * 3), sphere_color);
     glBufferSubData(GL_ARRAY_BUFFER, 2 * (sizeof(point4) * numberOfTriangles * 3), (sizeof(point3) * numberOfTriangles * 3), normal);
 
-
     glGenBuffers(1, &shadow_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, shadow_buffer);
-
+    updateShadows();
     glBufferData(GL_ARRAY_BUFFER, (sizeof(point4) * numberOfTriangles * 3) * 2, NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(point4) * numberOfTriangles * 3, shadow_points);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(point4) * numberOfTriangles * 3, (sizeof(point4) * numberOfTriangles * 3), shadow_color);
-    //glBufferSubData(GL_ARRAY_BUFFER, sizeof(point3) * numberOfTriangles *3, sizeof(vec3) * numberOfTriangles * 3, normal)
-
+    
 
     floor();
-    /*
     glGenBuffers(1, &floor_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, floor_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(floor_points) + sizeof(floor_colors), NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(floor_points), floor_points);
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(floor_points), sizeof(floor_colors),
-        floor_colors);
-    */
-    glGenBuffers(1, &floor_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, floor_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(point4) * 6 + sizeof(point4) * 6 + sizeof(point3) * 6, NULL, GL_STATIC_DRAW);
+    //4c add texture to buffer
+    glBufferData(GL_ARRAY_BUFFER, sizeof(point4) * 6 + sizeof(point4) * 6 + sizeof(point3) * 6 + sizeof(vec2) * 6, NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(point4) * 6, floor_points);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(point4) * 6, sizeof(point4) * 6, floor_colors);
     glBufferSubData(GL_ARRAY_BUFFER, 2 * sizeof(point4) * 6, sizeof(point3) * 6, floorNormals);
-
+    glBufferSubData(GL_ARRAY_BUFFER, (sizeof(point3)*6) + (2 * sizeof(point4) * 6), sizeof(vec2) * 6, textCoords);
 
     glGenBuffers(1, &axis_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
@@ -251,7 +336,7 @@ void init() {
 
     // Load shaders and create a shader program (to be used in display())
     //program = InitShader("vshader42.glsl", "fshader42.glsl");
-    program[0] = InitShader("vshader42.glsl", "fshader42.glsl");
+    program[0] = InitShader("vshader42.glsl", "fshaderNP.glsl");
     program[1] = InitShader("vshaderNP.glsl", "fshaderNP.glsl");
 
     glEnable(GL_DEPTH_TEST);
@@ -299,8 +384,7 @@ void SetUp_Lighting_Uniform_Vars(mat4 mv)
     glUniform1i(glGetUniformLocation(program[1], "spotOrPoint"), spotOrPoint);
     vec4 light_position_eyeFrame = mv * light1;
     glUniform4fv(glGetUniformLocation(program[1], "pointLight1"), 1, light_position_eyeFrame);
-    //glUniform4fv(glGetUniformLocation(program[1], "pointLight1"), 1, mv * (light1));
-
+    
     //part d
     mat4 normal4Matrix = mat4WithUpperLeftMat3(NormalMatrix(mv, 1));
 
@@ -314,9 +398,12 @@ void SetUp_Lighting_Uniform_Vars(mat4 mv)
     glUniform1f(glGetUniformLocation(program[1], "angle"), spotLightAngle);
     glUniform1f(glGetUniformLocation(program[1], "exp"), spotExponent);
     glUniform1i(glGetUniformLocation(program[1], "pointLightOn"), pointLightOn);
-    //project 4
-    glUniform1i(glGetUniformLocation(program[1], "fogOn"), fog);
-    glUniform1i(glGetUniformLocation(program[1], "fogType"), fogType);
+    //project 4a
+    glUniform1i(glGetUniformLocation(program[programSelect], "fogOn"), fog);
+    glUniform1i(glGetUniformLocation(program[programSelect], "fogType"), fogType);
+    //4c
+    glUniform1i(glGetUniformLocation(program[programSelect], "textureFlag"), groundTexture);
+
 }
 
 
@@ -335,6 +422,14 @@ void drawObj(GLuint buffer, int num_vertices, mat4& mv)
     }
     glEnableVertexAttribArray(vPosition);
     glVertexAttribPointer(vPosition, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+
+    if (groundTexture && !sphereOrGround)
+    {
+        GLuint vTexCoord = glGetAttribLocation(program[1], "vTexCoord");
+        glEnableVertexAttribArray(vTexCoord);
+        glVertexAttribPointer(vTexCoord, 2, GL_FLOAT, GL_FALSE, 0,//point4 points, point4 color, point3 normals,
+            BUFFER_OFFSET(sizeof(point4) * num_vertices + sizeof(point4) * num_vertices + sizeof(color3) * num_vertices));
+    }
 
     if (drawingShadow || (programSelect == 0))
     {
@@ -378,6 +473,7 @@ void display(void)
     model_view = glGetUniformLocation(program[programSelect], "model_view");
     projection = glGetUniformLocation(program[programSelect], "projection");
 
+    glUniform1i(glGetUniformLocation(program[programSelect], "texture_2D"), 0);
     mat4  p = Perspective(fovy, aspect, zNear, zFar);
     glUniformMatrix4fv(projection, 1, GL_TRUE, p); // GL_TRUE: matrix is row-major
 
@@ -407,8 +503,11 @@ void display(void)
     else              // Wireframe cube
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glLineWidth(1.0);
+    glUniform1i(glGetUniformLocation(program[programSelect], "textureFlag"), 0);
+
     drawObj(sphere_buffer, numberOfTriangles * 3, mv);  // draw the cube
 
+    glUniform1i(glGetUniformLocation(program[programSelect], "textureFlag"), groundTexture);
     //Draw floor first
     glDepthMask(GL_FALSE);
     sphereOrGround = false;
@@ -426,7 +525,7 @@ void display(void)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     else              // Wireframe floor
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
+    
     drawObj(floor_buffer, floor_NumVertices, mv);  // draw the floor
 
     if (sphereShadow && eye.y > 0)
@@ -461,6 +560,7 @@ void display(void)
         drawingShadow = true;
         sphereOrGround = true;
         glDepthMask(GL_TRUE);
+        glUniform1i(glGetUniformLocation(program[programSelect], "textureFlag"), 0);
         drawObj(shadow_buffer, numberOfTriangles * 3, mv);
         drawingShadow = false;
         glUseProgram(program[programSelect]); // Use the shader program
@@ -473,6 +573,8 @@ void display(void)
     }
     //draw floor again
     sphereOrGround = false;
+
+    glUniform1i(glGetUniformLocation(program[programSelect], "textureFlag"), groundTexture);
     glDepthMask(GL_TRUE);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     mv = LookAt(eye, at, up) * Translate(0.3f, 0.0f, 0.0f); //* Scale(1.6f, 1.5f, 3.3f);
@@ -516,7 +618,6 @@ void roll()
         rollingVec = vec3(b - a);
         if (rollingSpeed * translateTick >= 9.01388) //distance from a to b
         {
-            //totalRolled = totalRolled * Rotate(float(rollingSpeed * float(180.0 / PI) * translateTick), rollingPoint.x, rollingPoint.y, rollingPoint.z);
             startPoint = &b;
             rollingVec = vec3(c - b);
             translateTick = 0.0f;
@@ -527,7 +628,6 @@ void roll()
         rollingVec = vec3(c - b);
         if (rollingSpeed * translateTick >= 4.272) //distance b to c
         {
-            //totalRolled = totalRolled * Rotate(float(rollingSpeed * (180.0 / PI) * translateTick), rollingPoint.x, rollingPoint.y, rollingPoint.z);
             startPoint = &c;
             rollingVec = vec3(a - c);
             translateTick = 0.0f;
@@ -538,7 +638,6 @@ void roll()
         rollingVec = vec3(a - c);
         if (rollingSpeed * translateTick >= 9.05539) //distance c to a
         {
-            //totalRolled = totalRolled * Rotate(float(rollingSpeed * (180.0 / PI) * translateTick), rollingPoint.x, rollingPoint.y, rollingPoint.z);
             startPoint = &a;
             rollingVec = vec3(b - a);
             translateTick = 0.0f;
@@ -546,8 +645,6 @@ void roll()
     }
 
     rollingPoint = normalize(cross(vec3(0.0f, 1.0f, 0.0f), rollingVec));//we take the cross product with the y axis vector since that's orthogonal to the plane we roll on
-    //cout << "axis: " << rollingPoint.x << ", " << rollingPoint.y << ", " << rollingPoint.z << endl;
-    //cout << "vector " << rollingVec.x << ", " << rollingVec.y << ", " << rollingVec.z << endl;
 }
 
 void updateShadows() //Reference: https://sites.cs.ucsb.edu/~yfwang/courses/cs180/discussion/Shadows.pdf
@@ -605,6 +702,8 @@ void leftMouseMenu(int id) {
     case 3:
         blend = 1 - blend;
         break;
+    case 4:
+        groundTexture = 1 - groundTexture;
     }
     glutPostRedisplay();
 }
@@ -825,6 +924,7 @@ int main(int argc, char** argv)
     glutAddMenuEntry("Default View", 1);
     glutAddMenuEntry("Quit", 2);
     glutAddMenuEntry("Blending on/off", 3);
+    glutAddMenuEntry("Floor Texture", 4);
 
     glutAddSubMenu("Shadows", subMenuPointer);
     glutAddSubMenu("Enable Lighting", subLightPointer);

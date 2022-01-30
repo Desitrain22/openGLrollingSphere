@@ -14,6 +14,9 @@
 
 in  vec4 vPosition;
 in  vec4 vColor;
+in vec2 vTexCoord;
+
+out vec2 textCoords;
 out vec4 color;
 
 //assignment 4a; reference: https://stackoverflow.com/questions/4421261/vertex-shader-vs-fragment-shader
@@ -29,7 +32,8 @@ void main()
 {
     vec4 vPosition4 = vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);
     vec4 vColor4 = vec4(vColor.r, vColor.g, vColor.b, vColor.w);
-    
+    textCoords = vTexCoord;
+
     eye = model_view * vPosition;
     truePosition = vPosition; //
     

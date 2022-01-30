@@ -8,19 +8,33 @@
 
 in  vec4 color;
 in vec4 eye;
-in vec4 position;
+in vec4 positionOutput; //vPosition stolen from vshaderNP on it's way out
+in vec2 textCoords;
 
 out vec4 fColor;
 
+//4a
 uniform int fogOn;
 uniform int fogType;
 
+//4b reference: Checker-new handout
+uniform int textureFlag;
+uniform sampler2D texture_2D;
+
 void main() 
 {
-    fColor = color;
+    vec4 tempColor4 = color;
+
     float fogClamp = 1.0f;
     vec3 fogBaseColor = vec3(0.7f, 0.7f, 0.7f);
+    //part c
+    
+    if(textureFlag ==1)
+    {
+        tempColor4 = color * texture( texture_2D, textCoords);
+    }
 
+    //part a -- now moved after part c
     if (fogOn==1)
     {
         vec3 eyeBase3 = vec3(eye.x, eye.y, eye.z);
@@ -43,7 +57,10 @@ void main()
         fogClamp = clamp(fogClamp, 0.0f, 1.0f);
 
         //from the document: mix only gives a vec3, so we gotta fenagle while mantaining the alpha value 
-        fColor = vec4(mix(fogBaseColor, color.xyz, fogClamp), color.w);
+        fColor = vec4(mix(fogBaseColor, tempColor4.xyz, fogClamp), tempColor4.w);
     }
+    fColor = tempColor4;
+
+    
 } 
 

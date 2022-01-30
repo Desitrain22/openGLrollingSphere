@@ -14,18 +14,21 @@
 
 in  vec4 vPosition;
 in vec3 vNormal;
+in vec2 vTexCoord;
 out vec4 color;
+out vec4 positionOutput; //output of position to be picked up by fragment shader.
+out vec2 textCoords;
 
 uniform mat3 normal;
 uniform mat4 model_view;
 uniform mat4 projection;
 
-//c
+//3c
 uniform int smoothOrFlat;
 uniform vec4 ambientProduct, diffuseProduct, specularProduct;
 uniform vec4 distantLightVector;
 
-//d
+//3d
 uniform int pointLightOn;
 uniform int spotOrPoint;
 uniform vec4 pointLight1;
@@ -39,7 +42,6 @@ uniform float shiny;
 //assignment 4a; reference: https://stackoverflow.com/questions/4421261/vertex-shader-vs-fragment-shader
 
 out vec4 eye; // position relative to eye frame, sent to fragment shader
-out vec4 truePosition; // position relative to 0, gets sent to fragment shader
 
 void main() 
 {
@@ -50,8 +52,8 @@ void main()
     float attenuation = 1.0f;
 
     eye = model_view * vPosition;
-    truePosition = vPosition; 
-    
+    positionOutput = vPosition; 
+    textCoords = vTexCoord;
     // YJC: Original, incorrect below:
     //      gl_Position = projection * model_view * vPosition/vPosition.w;
     //gl_Position = projection * model_view * vPosition;
