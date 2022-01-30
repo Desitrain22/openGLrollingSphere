@@ -14,4 +14,3 @@ void main()
 { 
     fColor = color;
 } 
-

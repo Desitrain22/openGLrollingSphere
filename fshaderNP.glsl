@@ -7,90 +7,43 @@
               //      due to different settings of the default GLSL version
 
 in  vec4 color;
-
-in	vec4 position;
-in	vec4 oPosition;
+in vec4 eye;
+in vec4 position;
 
 out vec4 fColor;
 
-uniform int fog;
-uniform string fogType;
+uniform int fogOn;
+uniform int fogType;
 
 void main() 
-{ 
-    fColor = color;
-    vec3 fogColor = vec3(0.7, 0.7, 0.7), fColor3;
-	float density = 0.09;
-	float z = length(ePosition.xyz), f;
-	vec4 colorAfterTexM;
-	vec4 color_reddish = vec4(0.9, 0.1, 0.1, 1.0);
-
-} 
-/*
-/* 
-File Name: "vshader53.glsl":
-Vertex shader:
-  - Per vertex shading for a single point light source;
-    distance attenuation is Yet To Be Completed.
-  - Entire shading computation is done in the Eye Frame.
-*/
-
-#version 150  // YJC: Comment/un-comment this line to resolve compilation errors
-              //      due to different settings of the default GLSL version
-
-in  vec4 vPosition;
-in  vec3 vNormal;
-out vec4 color;
-
-uniform vec4 AmbientProduct, DiffuseProduct, SpecularProduct;
-uniform mat4 ModelView;
-uniform mat4 Projection;
-uniform mat3 Normal_Matrix;
-uniform vec4 LightPosition;   // Must be in Eye Frame
-uniform float Shininess;
-
-uniform float ConstAtt;  // Constant Attenuation
-uniform float LinearAtt; // Linear Attenuation
-uniform float QuadAtt;   // Quadratic Attenuation
-
-void main()
 {
-    // Transform vertex  position into eye coordinates
-    vec3 pos = (ModelView * vPosition).xyz;
-	
-    vec3 L = normalize( LightPosition.xyz - pos );
-    vec3 E = normalize( -pos );
-    vec3 H = normalize( L + E );
+    fColor = color;
+    float fogClamp = 1.0f;
+    vec3 fogBaseColor = vec3(0.7f, 0.7f, 0.7f);
 
-    // Transform vertex normal into eye coordinates
-      // vec3 N = normalize( ModelView*vec4(vNormal, 0.0) ).xyz;
-    vec3 N = normalize(Normal_Matrix * vNormal);
+    if (fogOn==1)
+    {
+        vec3 eyeBase3 = vec3(eye.x, eye.y, eye.z);
+        if (fogType == 1) //Linear
+        {
+            //recall: eye is at (7.0, 3.0, -10.0), floor runs from 5,0,8 to -5,0,-4 (10x12)
+            //from lecture 12: end - distance from pixel to viewer / end - start ()
+            fogClamp = (18.0f) - length(eyeBase3);
+            fogClamp = fogClamp/(18.0f); //still just 18.0f
+        }
+        else if (fogType == 2) //Exponential
+        {
+            fogClamp = exp((-0.09)*length(eyeBase3));
+        }
+        else if (fogType == 3) //"EXPOQUAD"
+        {
+            
+            fogClamp = exp(-pow((-0.09*length(eyeBase3)),2));
+        }
+        fogClamp = clamp(fogClamp, 0.0f, 1.0f);
 
-// YJC Note: N must use the one pointing *toward* the viewer
-//     ==> If (N dot E) < 0 then N must be changed to -N
-//
-   if ( dot(N, E) < 0 ) N = -N;
+        //from the document: mix only gives a vec3, so we gotta fenagle while mantaining the alpha value 
+        fColor = vec4(mix(fogBaseColor, color.xyz, fogClamp), color.w);
+    }
+} 
 
-
-/*--- To Do: Compute attenuation ---*/
-float attenuation = 1.0; 
-
- // Compute terms in the illumination equation
-    vec4 ambient = AmbientProduct;
-
-    float d = max( dot(L, N), 0.0 );
-    vec4  diffuse = d * DiffuseProduct;
-
-    float s = pow( max(dot(N, H), 0.0), Shininess );
-    vec4  specular = s * SpecularProduct;
-    
-    if( dot(L, N) < 0.0 ) {
-	specular = vec4(0.0, 0.0, 0.0, 1.0);
-    } 
-
-    gl_Position = Projection * ModelView * vPosition;
-
-/*--- attenuation below must be computed properly ---*/
-    color = attenuation * (ambient + diffuse + specular);
-}
-*/

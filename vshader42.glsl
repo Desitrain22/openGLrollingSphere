@@ -16,15 +16,23 @@ in  vec4 vPosition;
 in  vec4 vColor;
 out vec4 color;
 
+//assignment 4a; reference: https://stackoverflow.com/questions/4421261/vertex-shader-vs-fragment-shader
+
+out vec4 eye; // position relative to eye fram
+out vec4 truePosition; // position relative to 0 
+
+
 uniform mat4 model_view;
 uniform mat4 projection;
 
-
 void main() 
 {
-vec4 vPosition4 = vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);
-vec4 vColor4 = vec4(vColor.r, vColor.g, vColor.b, 1.0); 
-
+    vec4 vPosition4 = vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);
+    vec4 vColor4 = vec4(vColor.r, vColor.g, vColor.b, vColor.w);
+    
+    eye = model_view * vPosition;
+    truePosition = vPosition; //
+    
     // YJC: Original, incorrect below:
     //      gl_Position = projection*model_view*vPosition/vPosition.w;
 

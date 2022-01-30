@@ -18,7 +18,7 @@
     <ClCompile Include="InitShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Assignment3.cpp">
+    <ClCompile Include="Assignment4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -52,5 +52,6 @@
     <None Include="sphere.1024">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="fshaderNP.glsl" />
   </ItemGroup>
 </Project>

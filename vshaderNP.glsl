@@ -12,7 +12,7 @@
 #version 150  // YJC: Comment/un-comment this line to resolve compilation errors
               //      due to different settings of the default GLSL version
 
-in  vec3 vPosition;
+in  vec4 vPosition;
 in vec3 vNormal;
 out vec4 color;
 
@@ -33,18 +33,28 @@ uniform vec4 pointLightVector;
 uniform vec4 pointAmbient, pointDiffuse, pointSpecular;
 uniform float angle, exp;
 uniform float atten1, atten2, atten3;
-
 uniform float shiny;
+
+
+//assignment 4a; reference: https://stackoverflow.com/questions/4421261/vertex-shader-vs-fragment-shader
+
+out vec4 eye; // position relative to eye frame, sent to fragment shader
+out vec4 truePosition; // position relative to 0, gets sent to fragment shader
 
 void main() 
 {
-    vec4 vPosition4 = vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);
-    vec4 vColor4 = vec4(vNormal.r, vNormal.g, vNormal.b, 1.0); 
+    vec4 vPosition4 = vPosition;
+    vec3 vPosition3 = vec3(vPosition.x, vPosition.y, vPosition.z);
+
+    vec4 vColor4 = vec4(vNormal.r, vNormal.g, vNormal.b, 1.0f); 
     float attenuation = 1.0f;
+
+    eye = model_view * vPosition;
+    truePosition = vPosition; 
+    
     // YJC: Original, incorrect below:
     //      gl_Position = projection * model_view * vPosition/vPosition.w;
-
-    //gl_Position = projection * model_view * vPosition4;
+    //gl_Position = projection * model_view * vPosition;
 
     vec3 position = (model_view * vPosition4).xyz;
 

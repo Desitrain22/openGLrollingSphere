@@ -143,7 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Assignment3.cpp" />
+    <ClCompile Include="Assignment4.cpp" />
     <ClCompile Include="InitShader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="fshader42.glsl" />
+    <None Include="fshaderNP.glsl" />
     <None Include="sphere.1024" />
     <None Include="sphere.128" />
     <None Include="sphere.256" />
