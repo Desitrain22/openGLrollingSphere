@@ -57,7 +57,7 @@ void main()
         fogClamp = clamp(fogClamp, 0.0f, 1.0f);
 
         //from the document: mix only gives a vec3, so we gotta fenagle while mantaining the alpha value 
-        fColor = vec4(mix(fogBaseColor, tempColor4.xyz, fogClamp), tempColor4.w);
+        tempColor4 = vec4(mix(fogBaseColor, tempColor4.xyz, fogClamp), tempColor4.w);
     }
     fColor = tempColor4;
 
