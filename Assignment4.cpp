@@ -109,10 +109,12 @@ float spotExponent = 15.0f;
 int lightOn = 0;
 int pointLightOn = false;
 
-//assigntment 4
+//assignment 4
 int fog = 0;
 int fogType = 1;
 color4 fogColor = color4(0.7, 0.7, 0.7, 0.5);
+//4b
+bool blend = false;
 
 point4 axis[9] =
 { point4(0.0,0.0,0.0, 1.0f), point4(10.0, 0.0, 0.0, 1.0f), point4(20.0, 0.0, 0.0, 1.0f),
@@ -429,6 +431,12 @@ void display(void)
 
     if (sphereShadow && eye.y > 0)
     {
+        //4b
+        if (blend)
+        {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
         glUseProgram(program[0]); // Use the shader program
         model_view = glGetUniformLocation(program[0], "model_view");
         projection = glGetUniformLocation(program[0], "projection");
@@ -458,7 +466,10 @@ void display(void)
         glUseProgram(program[programSelect]); // Use the shader program
         model_view = glGetUniformLocation(program[programSelect], "model_view");
         projection = glGetUniformLocation(program[programSelect], "projection");
-
+        if (blend)
+        {
+            glDisable(GL_BLEND);    
+        }
     }
     //draw floor again
     sphereOrGround = false;
@@ -592,6 +603,7 @@ void leftMouseMenu(int id) {
         exit(EXIT_SUCCESS);
         break;
     case 3:
+        blend = 1 - blend;
         break;
     }
     glutPostRedisplay();
@@ -700,7 +712,6 @@ void fogMenu(int id)
         break;
     }
 }
-
 
 void keyboard(unsigned char key, int x, int y)
 {
@@ -813,6 +824,7 @@ int main(int argc, char** argv)
 
     glutAddMenuEntry("Default View", 1);
     glutAddMenuEntry("Quit", 2);
+    glutAddMenuEntry("Blending on/off", 3);
 
     glutAddSubMenu("Shadows", subMenuPointer);
     glutAddSubMenu("Enable Lighting", subLightPointer);
@@ -820,7 +832,6 @@ int main(int argc, char** argv)
     glutAddSubMenu("Shading", subShadingPointer);
     glutAddSubMenu("Light Source", subSourcePointer);
     glutAddSubMenu("Fog Menu", subFogPointer);
-
     glutAttachMenu(GLUT_LEFT_BUTTON);
 
     init();
